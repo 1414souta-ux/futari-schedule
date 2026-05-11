@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f4ede0">
+<title>ふたりの予定</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ふたりの予定">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f4ede0;
+    --paper-deep: #ebe2d1;
+    --ink: #2b2a26;
+    --ink-soft: #5a574e;
+    --ink-mute: #8b8676;
+    --line: #d9cfb8;
+    --line-soft: #e6dec9;
+    --accent: #4a6b8a;
+    --accent-deep: #354d68;
+    --warn: #b85c3f;
+    --ok: #5a7a4f;
+    --card: #fbf7ed;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Zen Kaku Gothic New", -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,0.5) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(74,107,138,0.04) 0%, transparent 50%);
+    padding: 24px 16px 80px;
+    padding-top: calc(24px + env(safe-area-inset-top));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .wrap { max-width: 480px; margin: 0 auto; }
+
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 8px 4px 24px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    font-family: "Cormorant Garamond", serif;
+    font-weight: 500;
+    font-size: 26px;
+    letter-spacing: 0.02em;
+  }
+  .header-right {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .header .sub {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-mute);
+  }
+  .settings-link {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .settings-link:hover { color: var(--accent); }
+
+  .tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 8px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--ink-mute);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    margin-bottom: -1px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tab.active {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line-soft);
+    border-radius: 4px;
+    padding: 22px 20px;
+    box-shadow: 0 1px 2px rgba(43,42,38,0.03);
+  }
+
+  .setup-intro {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .setup-intro strong {
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+
+  .edit-banner {
+    background: rgba(74,107,138,0.08);
+    border-left: 3px solid var(--accent);
+    padding: 10px 12px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    color: var(--accent-deep);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .edit-banner .cancel-edit {
+    background: none;
+    border: none;
+    color: var(--accent-deep);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field:last-of-type { margin-bottom: 24px; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  input[type="text"],
+  input[type="url"],
+  input[type="password"],
+  input[type="datetime-local"],
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  input:focus, textarea:focus { border-bottom-color: var(--accent); }
+  textarea {
+    resize: vertical;
+    min-height: 56px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    line-height: 1.6;
+  }
+  textarea:focus { border-color: var(--accent); }
+
+  .datetime-row { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 480px) {
+    .datetime-row { grid-template-columns: 1fr 1fr; }
+  }
+
+  .author-toggle { display: flex; gap: 8px; }
+  .author-btn {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .author-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+  }
+
+  .submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.05s;
+  }
+  .submit:hover:not(:disabled) { background: var(--accent-deep); }
+  .submit:active:not(:disabled) { transform: scale(0.99); }
+  .submit:disabled { opacity: 0.5; cursor: wait; }
+
+  .secondary {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    background: transparent;
+    color: var(--ink-mute);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .status {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 3px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .status.ok { background: rgba(90,122,79,0.1); color: var(--ok); border-left: 2px solid var(--ok); }
+  .status.err { background: rgba(184,92,63,0.1); color: var(--warn); border-left: 2px solid var(--warn); }
+  .status.info { color: var(--ink-mute); padding: 8px 0; }
+
+  .event-list { padding: 4px 0; }
+  .event-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .event-item:last-child { border-bottom: none; }
+  .event-date {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .event-title {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 4px;
+  }
+  .event-author {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ink-mute);
+    background: var(--paper-deep);
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .event-desc {
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-top: 4px;
+  }
+  .event-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+  }
+  .event-actions button {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: color 0.2s;
+  }
+  .event-actions button:hover { color: var(--accent); }
+  .event-actions .del:hover { color: var(--warn); }
+
+  .empty {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--ink-mute);
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    font-size: 15px;
+  }
+
+  .hidden { display: none; }
+
+  .reload {
+    display: block;
+    margin: 16px auto 0;
+    background: none;
+    border: 1px solid var(--line);
+    padding: 8px 16px;
+    border-radius: 3px;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+  .reload:hover { border-color: var(--accent); color: var(--accent); }
+
+  .offline-banner {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: var(--warn);
+    color: white;
+    text-align: center;
+    padding: 8px;
+    font-size: 13px;
+    z-index: 100;
+    transform: translateY(-100%);
+    transition: transform 0.3s;
+  }
+  .offline-banner.show { transform: translateY(0); }
+</style>
+</head>
+<body>
+<div id="offline-banner" class="offline-banner">オフラインです — 送信は接続復帰後にしてください</div>
+
+<div class="wrap">
+  <div class="header">
+    <h1>Our Schedule</h1>
+    <div class="header-right">
+      <span class="sub">— for two —</span>
+      <button class="settings-link" id="settings-link" title="設定">⚙</button>
+    </div>
+  </div>
+
+  <!-- 初回設定画面 -->
+  <div id="setup-screen" class="card hidden">
+    <div class="setup-intro">
+      <strong>初回設定</strong><br>
+      GASのウェブアプリURLと共有トークンを入力してください。<br>
+      この端末にだけ保存され、外部には送信されません。
+    </div>
+    <div class="field">
+      <label>GAS URL</label>
+      <input type="url" id="setup-url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label>共有トークン</label>
+      <input type="password" id="setup-token" placeholder="GAS側のTOKENと同じ値" autocomplete="off" />
+    </div>
+    <button class="submit" id="setup-save">保存して始める</button>
+    <button class="secondary hidden" id="setup-cancel">キャンセル</button>
+    <div id="setup-status"></div>
+  </div>
+
+  <!-- メインアプリ -->
+  <div id="main-app" class="hidden">
+    <div class="tabs">
+      <button class="tab active" data-tab="input">入力する</button>
+      <button class="tab" data-tab="list">これからの予定</button>
+    </div>
+
+    <!-- 入力 -->
+    <div id="input-tab" class="card">
+      <div id="edit-banner" class="edit-banner hidden">
+        <span>編集モード</span>
+        <button class="cancel-edit" id="cancel-edit">✕ キャンセル</button>
+      </div>
+
+      <div class="field">
+        <label>入力者</label>
+        <div class="author-toggle">
+          <button type="button" class="author-btn active" data-author="そうた">そうた</button>
+          <button type="button" class="author-btn" data-author="パートナー">パートナー</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>予定</label>
+        <input type="text" id="title" placeholder="例：渋谷でディナー" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label>日時</label>
+        <div class="datetime-row">
+          <input type="datetime-local" id="start" />
+          <input type="datetime-local" id="end" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>備考</label>
+        <textarea id="desc" placeholder="場所、持ち物、メモなど（任意）"></textarea>
+      </div>
+
+      <button class="submit" id="submit-btn">カレンダーに登録</button>
+      <div id="status"></div>
+    </div>
+
+    <!-- 一覧 -->
+    <div id="list-tab" class="card hidden">
+      <div id="list-status" class="status info">読み込み中...</div>
+      <div id="event-list" class="event-list"></div>
+      <button class="reload" id="reload-btn">再読み込み</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  設定はlocalStorageに保存（リポジトリにシークレットを残さない）
+  // ============================================================
+  let GAS_URL = localStorage.getItem('gasUrl') || '';
+  let TOKEN   = localStorage.getItem('token')  || '';
+
+  let currentAuthor = 'そうた';
+  let editingEventId = null;
+  let cachedEvents = [];
+
+  // ===== 初回判定 =====
+  function isConfigured() { return !!(GAS_URL && TOKEN); }
+
+  function showSetup(asEdit = false) {
+    document.getElementById('setup-screen').classList.remove('hidden');
+    document.getElementById('main-app').classList.add('hidden');
+    document.getElementById('setup-url').value = GAS_URL;
+    document.getElementById('setup-token').value = TOKEN;
+    document.getElementById('setup-cancel').classList.toggle('hidden', !asEdit);
+    showStatus(document.getElementById('setup-status'), '', '');
+  }
+  function showApp() {
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+  }
+
+  // 設定保存
+  document.getElementById('setup-save').addEventListener('click', async () => {
+    const url = document.getElementById('setup-url').value.trim();
+    const tok = document.getElementById('setup-token').value.trim();
+    const status = document.getElementById('setup-status');
+
+    if (!url || !tok) return showStatus(status, 'err', 'URLとトークンを両方入力してください。');
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(url)) {
+      return showStatus(status, 'err', 'GASのウェブアプリURLの形式が違うようです。');
+    }
+
+    // 接続テスト（GET /?token=...）
+    showStatus(status, 'info', '接続テスト中…');
+    try {
+      const res = await fetch(`${url}?token=${encodeURIComponent(tok)}`);
+      const data = await res.json();
+      if (!data.ok) {
+        return showStatus(status, 'err', `テスト失敗：${data.error}`);
+      }
+      // OK → 保存
+      localStorage.setItem('gasUrl', url);
+      localStorage.setItem('token', tok);
+      GAS_URL = url; TOKEN = tok;
+      showStatus(status, 'ok', '保存しました');
+      setTimeout(() => showApp(), 400);
+    } catch (err) {
+      showStatus(status, 'err', `通信エラー：${err.message}`);
+    }
+  });
+
+  // 設定キャンセル（編集時のみ）
+  document.getElementById('setup-cancel').addEventListener('click', () => {
+    if (isConfigured()) showApp();
+  });
+
+  // 設定アイコン
+  document.getElementById('settings-link').addEventListener('click', () => {
+    showSetup(isConfigured());
+  });
+
+  // ===== 入力者切替 =====
+  document.querySelectorAll('.author-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.author-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentAuthor = btn.dataset.author;
+      localStorage.setItem('lastAuthor', currentAuthor);
+    });
+  });
+  const savedAuthor = localStorage.getItem('lastAuthor');
+  if (savedAuthor) {
+    document.querySelectorAll('.author-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.author === savedAuthor);
+    });
+    currentAuthor = savedAuthor;
+  }
+
+  // ===== タブ =====
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === name);
+    });
+    document.getElementById('input-tab').classList.toggle('hidden', name !== 'input');
+    document.getElementById('list-tab').classList.toggle('hidden', name !== 'list');
+    if (name === 'list') loadEvents();
+  }
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+
+  // ===== 日時 =====
+  function toLocalInput(d) {
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  function setDefaultDateTime() {
+    const now = new Date();
+    now.setMinutes(0, 0, 0);
+    now.setHours(now.getHours() + 1);
+    const end = new Date(now); end.setHours(end.getHours() + 1);
+    document.getElementById('start').value = toLocalInput(now);
+    document.getElementById('end').value = toLocalInput(end);
+  }
+  setDefaultDateTime();
+
+  document.getElementById('start').addEventListener('change', () => {
+    const s = document.getElementById('start').value;
+    const e = document.getElementById('end').value;
+    if (s && (!e || new Date(e) <= new Date(s))) {
+      const next = new Date(s); next.setHours(next.getHours() + 1);
+      document.getElementById('end').value = toLocalInput(next);
+    }
+  });
+
+  // ===== 編集モード =====
+  function enterEditMode(ev) {
+    editingEventId = ev.id;
+    const m = ev.title.match(/^\[(.+?)\]\s*(.*)$/);
+    const author = m ? m[1] : currentAuthor;
+    const pureTitle = m ? m[2] : ev.title;
+
+    document.getElementById('title').value = pureTitle;
+    document.getElementById('start').value = toLocalInput(new Date(ev.start));
+    document.getElementById('end').value = toLocalInput(new Date(ev.end));
+    document.getElementById('desc').value = ev.description || '';
+
+    document.querySelectorAll('.author-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.author === author);
+    });
+    currentAuthor = author;
+
+    document.getElementById('edit-banner').classList.remove('hidden');
+    document.getElementById('submit-btn').textContent = '更新する';
+    switchTab('input');
+    document.getElementById('title').focus();
+  }
+  function exitEditMode() {
+    editingEventId = null;
+    document.getElementById('edit-banner').classList.add('hidden');
+    document.getElementById('submit-btn').textContent = 'カレンダーに登録';
+    document.getElementById('title').value = '';
+    document.getElementById('desc').value = '';
+    setDefaultDateTime();
+    showStatus(document.getElementById('status'), '', '');
+  }
+  document.getElementById('cancel-edit').addEventListener('click', exitEditMode);
+
+  // ===== 送信 =====
+  document.getElementById('submit-btn').addEventListener('click', async () => {
+    const title = document.getElementById('title').value.trim();
+    const start = document.getElementById('start').value;
+    const end   = document.getElementById('end').value;
+    const desc  = document.getElementById('desc').value;
+    const status = document.getElementById('status');
+
+    if (!title || !start || !end) {
+      return showStatus(status, 'err', 'タイトル・開始・終了は必須です。');
+    }
+    if (new Date(start) >= new Date(end)) {
+      return showStatus(status, 'err', '終了時刻は開始より後にしてください。');
+    }
+
+    const btn = document.getElementById('submit-btn');
+    const isUpdate = !!editingEventId;
+    btn.disabled = true;
+    btn.textContent = isUpdate ? '更新中…' : '送信中…';
+    showStatus(status, '', '');
+
+    try {
+      const data = await callGAS({
+        action: isUpdate ? 'update' : 'create',
+        eventId: editingEventId,
+        author: currentAuthor,
+        title, startDateTime: start, endDateTime: end, description: desc,
+      });
+      if (data.ok) {
+        showStatus(status, 'ok', isUpdate ? `更新しました：${data.title}` : `登録しました：${data.title}`);
+        exitEditMode();
+      } else {
+        showStatus(status, 'err', `エラー：${data.error}`);
+        btn.textContent = isUpdate ? '更新する' : 'カレンダーに登録';
+      }
+    } catch (err) {
+      showStatus(status, 'err', `通信エラー：${err.message}`);
+      btn.textContent = isUpdate ? '更新する' : 'カレンダーに登録';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ===== 一覧 =====
+  document.getElementById('reload-btn').addEventListener('click', loadEvents);
+
+  async function loadEvents() {
+    const listEl = document.getElementById('event-list');
+    const status = document.getElementById('list-status');
+    listEl.innerHTML = '';
+    status.className = 'status info';
+    status.textContent = '読み込み中…';
+    try {
+      const res = await fetch(`${GAS_URL}?token=${encodeURIComponent(TOKEN)}`);
+      const data = await res.json();
+      if (!data.ok) {
+        status.className = 'status err';
+        status.textContent = `エラー：${data.error}`;
+        return;
+      }
+      status.textContent = ''; status.className = '';
+      cachedEvents = data.events;
+
+      if (data.events.length === 0) {
+        listEl.innerHTML = '<div class="empty">— no events scheduled —</div>';
+        return;
+      }
+      data.events.forEach(ev => {
+        const sd = new Date(ev.start);
+        const ed = new Date(ev.end);
+        const m = ev.title.match(/^\[(.+?)\]\s*(.*)$/);
+        const author = m ? m[1] : '';
+        const pureTitle = m ? m[2] : ev.title;
+
+        const div = document.createElement('div');
+        div.className = 'event-item';
+        div.innerHTML = `
+          <div class="event-date">${formatDate(sd)} · ${formatTime(sd)} – ${formatTime(ed)}</div>
+          <div class="event-title">${author ? `<span class="event-author">${escapeHtml(author)}</span>` : ''}${escapeHtml(pureTitle)}</div>
+          ${ev.description ? `<div class="event-desc">${escapeHtml(ev.description)}</div>` : ''}
+          <div class="event-actions">
+            <button class="edit" data-id="${escapeHtml(ev.id)}">編集</button>
+            <button class="del" data-id="${escapeHtml(ev.id)}">削除</button>
+          </div>
+        `;
+        listEl.appendChild(div);
+      });
+
+      listEl.querySelectorAll('.edit').forEach(b => {
+        b.addEventListener('click', () => {
+          const ev = cachedEvents.find(e => e.id === b.dataset.id);
+          if (ev) enterEditMode(ev);
+        });
+      });
+      listEl.querySelectorAll('.del').forEach(b => {
+        b.addEventListener('click', () => deleteEvent(b.dataset.id));
+      });
+    } catch (err) {
+      status.className = 'status err';
+      status.textContent = `通信エラー：${err.message}`;
+    }
+  }
+
+  async function deleteEvent(eventId) {
+    if (!confirm('この予定を削除しますか？\n（Googleカレンダー上から消えます）')) return;
+    try {
+      const data = await callGAS({ action: 'delete', eventId });
+      if (data.ok) loadEvents();
+      else alert('削除失敗：' + data.error);
+    } catch (err) {
+      alert('通信エラー：' + err.message);
+    }
+  }
+
+  async function callGAS(payload) {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ token: TOKEN, ...payload }),
+    });
+    return await res.json();
+  }
+
+  function showStatus(el, type, msg) {
+    el.className = type ? 'status ' + type : '';
+    el.textContent = msg;
+  }
+  function formatDate(d) {
+    const days = ['日','月','火','水','木','金','土'];
+    return `${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')}(${days[d.getDay()]})`;
+  }
+  function formatTime(d) {
+    const p = n => String(n).padStart(2,'0');
+    return `${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ===== オフライン =====
+  function updateOnlineStatus() {
+    document.getElementById('offline-banner').classList.toggle('show', !navigator.onLine);
+  }
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+
+  // ===== Service Worker =====
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js')
+        .catch(err => console.warn('SW登録失敗:', err));
+    });
+  }
+
+  // ===== 起動時の振り分け =====
+  if (isConfigured()) showApp();
+  else showSetup(false);
+</script>
+</body>
+</html>
