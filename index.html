@@ -370,7 +370,7 @@
     </div>
   </div>
 
-  <!-- 初回設定画面 -->
+  <!-- 初回設定 -->
   <div id="setup-screen" class="card hidden">
     <div class="setup-intro">
       <strong>初回設定</strong><br>
@@ -390,14 +390,13 @@
     <div id="setup-status"></div>
   </div>
 
-  <!-- メインアプリ -->
+  <!-- メイン -->
   <div id="main-app" class="hidden">
     <div class="tabs">
       <button class="tab active" data-tab="input">入力する</button>
       <button class="tab" data-tab="list">これからの予定</button>
     </div>
 
-    <!-- 入力 -->
     <div id="input-tab" class="card">
       <div id="edit-banner" class="edit-banner hidden">
         <span>編集モード</span>
@@ -408,7 +407,7 @@
         <label>入力者</label>
         <div class="author-toggle">
           <button type="button" class="author-btn active" data-author="そうた">そうた</button>
-          <button type="button" class="author-btn" data-author="パートナー">パートナー</button>
+          <button type="button" class="author-btn" data-author="りお">りお</button>
         </div>
       </div>
 
@@ -434,7 +433,6 @@
       <div id="status"></div>
     </div>
 
-    <!-- 一覧 -->
     <div id="list-tab" class="card hidden">
       <div id="list-status" class="status info">読み込み中...</div>
       <div id="event-list" class="event-list"></div>
@@ -444,17 +442,18 @@
 </div>
 
 <script>
-  // ============================================================
-  //  設定はlocalStorageに保存（リポジトリにシークレットを残さない）
-  // ============================================================
   let GAS_URL = localStorage.getItem('gasUrl') || '';
   let TOKEN   = localStorage.getItem('token')  || '';
+
+  // 旧データ移行: 「パートナー」を「りお」に
+  if (localStorage.getItem('lastAuthor') === 'パートナー') {
+    localStorage.setItem('lastAuthor', 'りお');
+  }
 
   let currentAuthor = 'そうた';
   let editingEventId = null;
   let cachedEvents = [];
 
-  // ===== 初回判定 =====
   function isConfigured() { return !!(GAS_URL && TOKEN); }
 
   function showSetup(asEdit = false) {
@@ -470,7 +469,6 @@
     document.getElementById('main-app').classList.remove('hidden');
   }
 
-  // 設定保存
   document.getElementById('setup-save').addEventListener('click', async () => {
     const url = document.getElementById('setup-url').value.trim();
     const tok = document.getElementById('setup-token').value.trim();
@@ -481,15 +479,11 @@
       return showStatus(status, 'err', 'GASのウェブアプリURLの形式が違うようです。');
     }
 
-    // 接続テスト（GET /?token=...）
     showStatus(status, 'info', '接続テスト中…');
     try {
       const res = await fetch(`${url}?token=${encodeURIComponent(tok)}`);
       const data = await res.json();
-      if (!data.ok) {
-        return showStatus(status, 'err', `テスト失敗：${data.error}`);
-      }
-      // OK → 保存
+      if (!data.ok) return showStatus(status, 'err', `テスト失敗：${data.error}`);
       localStorage.setItem('gasUrl', url);
       localStorage.setItem('token', tok);
       GAS_URL = url; TOKEN = tok;
@@ -500,17 +494,14 @@
     }
   });
 
-  // 設定キャンセル（編集時のみ）
   document.getElementById('setup-cancel').addEventListener('click', () => {
     if (isConfigured()) showApp();
   });
-
-  // 設定アイコン
   document.getElementById('settings-link').addEventListener('click', () => {
     showSetup(isConfigured());
   });
 
-  // ===== 入力者切替 =====
+  // ===== 入力者 =====
   document.querySelectorAll('.author-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.author-btn').forEach(b => b.classList.remove('active'));
@@ -567,11 +558,9 @@
   // ===== 編集モード =====
   function enterEditMode(ev) {
     editingEventId = ev.id;
-    const m = ev.title.match(/^\[(.+?)\]\s*(.*)$/);
-    const author = m ? m[1] : currentAuthor;
-    const pureTitle = m ? m[2] : ev.title;
+    const author = ev.author || currentAuthor;
 
-    document.getElementById('title').value = pureTitle;
+    document.getElementById('title').value = ev.title;
     document.getElementById('start').value = toLocalInput(new Date(ev.start));
     document.getElementById('end').value = toLocalInput(new Date(ev.end));
     document.getElementById('desc').value = ev.description || '';
@@ -605,12 +594,8 @@
     const desc  = document.getElementById('desc').value;
     const status = document.getElementById('status');
 
-    if (!title || !start || !end) {
-      return showStatus(status, 'err', 'タイトル・開始・終了は必須です。');
-    }
-    if (new Date(start) >= new Date(end)) {
-      return showStatus(status, 'err', '終了時刻は開始より後にしてください。');
-    }
+    if (!title || !start || !end) return showStatus(status, 'err', 'タイトル・開始・終了は必須です。');
+    if (new Date(start) >= new Date(end)) return showStatus(status, 'err', '終了時刻は開始より後にしてください。');
 
     const btn = document.getElementById('submit-btn');
     const isUpdate = !!editingEventId;
@@ -667,15 +652,12 @@
       data.events.forEach(ev => {
         const sd = new Date(ev.start);
         const ed = new Date(ev.end);
-        const m = ev.title.match(/^\[(.+?)\]\s*(.*)$/);
-        const author = m ? m[1] : '';
-        const pureTitle = m ? m[2] : ev.title;
 
         const div = document.createElement('div');
         div.className = 'event-item';
         div.innerHTML = `
           <div class="event-date">${formatDate(sd)} · ${formatTime(sd)} – ${formatTime(ed)}</div>
-          <div class="event-title">${author ? `<span class="event-author">${escapeHtml(author)}</span>` : ''}${escapeHtml(pureTitle)}</div>
+          <div class="event-title">${ev.author ? `<span class="event-author">${escapeHtml(ev.author)}</span>` : ''}${escapeHtml(ev.title)}</div>
           ${ev.description ? `<div class="event-desc">${escapeHtml(ev.description)}</div>` : ''}
           <div class="event-actions">
             <button class="edit" data-id="${escapeHtml(ev.id)}">編集</button>
@@ -736,7 +718,6 @@
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  // ===== オフライン =====
   function updateOnlineStatus() {
     document.getElementById('offline-banner').classList.toggle('show', !navigator.onLine);
   }
@@ -744,7 +725,6 @@
   window.addEventListener('offline', updateOnlineStatus);
   updateOnlineStatus();
 
-  // ===== Service Worker =====
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js')
@@ -752,7 +732,6 @@
     });
   }
 
-  // ===== 起動時の振り分け =====
   if (isConfigured()) showApp();
   else showSetup(false);
 </script>
